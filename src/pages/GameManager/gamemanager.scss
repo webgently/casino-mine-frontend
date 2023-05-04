@@ -1,0 +1,127 @@
+.game-management-layout {
+  @apply flex justify-center items-center relative;
+
+  .game-landscape-top {
+    font-size: 28px;
+    @apply flex items-center justify-center gap-[1em] w-full h-[5em] px-[0.75em] absolute top-0 right-0 left-0 z-[100];
+    .logo-container {
+      background-image: url("../../assets/images/logo.webp");
+      @apply w-[7em] h-[3.125em] bg-[50%] bg-no-repeat bg-contain;
+    }
+    .profit-list-container {
+      width: 27em;
+      .history {
+        @apply w-full h-full relative z-[2];
+        &:before {
+          box-shadow: 0.125em 0.125em 0.25em rgba(255,255,255,.15), -0.125em -0.125em 0.375em rgba(0,0,0,.75);
+          @apply content-[""] opacity-[0.35] bg-black/[0.1] rounded-[0.75em] absolute top-0 bottom-0 right-0 left-0;
+        }
+        .history-inner {
+          @apply flex justify-around items-center w-full h-full;
+          .history-item {
+            transition: transform .5s linear;
+            @apply flex justify-center items-center w-full h-[1.6em] relative;
+            > span {
+              text-shadow: 0 0.0625em 0.125em rgba(0,0,0,.35);
+              @apply text-blue text-[.625em] text-center font-[700] leading-[.625em];
+            }
+          }
+        }
+      }
+    }
+    .balance-container{
+      @apply flex items-center justify-center gap-[1em] w-[7em];
+      > label {
+        text-shadow: -0.0625em -0.0625em 0.125em rgba(255,255,255,.25), 0.0625em 0.0625em 0.125em rgba(0,0,0,.25);
+        @apply flex items-center text-center text-white text-[0.5em] font-[400] leading-[0.5em] opacity-[0.75];
+      }
+      .balance {
+        @apply flex justify-center items-center w-[6.875em] h-[1.6em] relative;
+        &:before {
+          box-shadow: 0.125em 0.125em 0.25em rgba(255,255,255,.15), -0.125em -0.125em 0.375em rgba(0,0,0,.75);
+          @apply bg-black/[0.1] content-[""] opacity-[0.25] rounded-[0.75em] absolute top-0 bottom-0 right-0 left-0;
+        }
+        > span {
+         @apply text-white text-[.75em] font-[700] leading-[1em] text-center;
+        }
+      }
+    }
+  }
+
+  .game-landscape-content {
+    background-image: url("../../assets/images/play_bg.webp");
+    @apply flex justify-center items-center bg-center w-full h-[100vh] bg-no-repeat bg-contain relative;
+    &:before {
+      background-image: url("../../assets/images/light.webp");
+      @apply w-full h-full content-[""] bg-contain bg-no-repeat bg-center absolute -top-[6vw];
+    }
+
+    .game-landscape-card-group {
+      font-size: 28px;
+      @apply grid w-[22em] h-[22em] gap-[0.025em];
+    }
+  }
+
+  .game-landscape-center {
+    font-size: 28px;
+    @apply flex flex-col justify-center items-center fixed left-0 right-0 bottom-[6%];
+    .game-landscape-size {
+      @apply flex flex-col justify-center items-center gap-[0.75em];
+      .game-landscape-size-list {
+        @apply flex justify-center items-center gap-[0.3125em];
+        font-size: 28px;
+
+        .game-landscape-size-item {
+          box-shadow: -0.125em -0.125em 0.25em rgba(255, 255, 255, .15), 0.125em 0.125em 0.375em rgba(0, 0, 0, .5);
+          border: 0.0625em solid rgb(255, 255, 255);
+          background: rgba(0, 0, 0, .2);
+          @apply flex justify-center items-center w-[1.875em] h-[1.25em] cursor-pointer rounded-[0.375em] leading-[1em];
+          > span {
+            text-shadow: 0.0625em 0.0625em 0.125em rgba(255, 255, 255, .25), -0.0625em -0.0625em 0.125em rgba(0, 0, 0, .25);
+            color: rgba(255, 255, 255, .75);
+            text-align: center;
+            font-size: 0.625em;
+            font-weight: 600;
+          }
+        }
+
+        ._active {
+          color: rgba(255, 255, 255, .25);
+          border: 0.0625em solid rgba(255, 255, 255, .25);
+          box-shadow: 0.125em 0.125em 0.25em rgba(255, 255, 255, .15), -0.125em -0.125em 0.375em rgba(0, 0, 0, .5);
+        }
+      }
+
+      .game-landscape-size-title {
+        text-shadow: -0.0625em -0.0625em 0.125em rgba(255, 255, 255, .25), 0.0625em 0.0625em 0.125em rgba(0, 0, 0, .25);
+        @apply text-[0.52em] text-white font-[400] text-center flex items-center ;
+      }
+    }
+  }
+
+  .game-landscape-left {
+    background: url("../../assets/images/action_bg.svg");
+    @apply flex flex-col justify-center items-center gap-[4em] bg-center bg-no-repeat bg-contain
+    fixed left-[10%] bottom-[6%] p-[50px_20px_10px];
+    .wickets-action {
+      @apply flex flex-col justify-center items-center gap-[10px];
+      label {
+        @apply text-center text-white/[0.75] font-[.5em];
+        text-shadow: -0.0625em -0.0625em 0.125em rgba(255, 255, 255, .25), 0.0625em 0.0625em 0.125em rgba(0, 0, 0, .25);
+      }
+    }
+  }
+
+  .game-landscape-right {
+    background: url("../../assets/images/action_bg.svg");
+    @apply flex flex-col justify-center items-center gap-[4em] bg-center bg-no-repeat bg-contain
+    fixed right-[10%] bottom-[6%] p-[50px_20px_10px];
+    .turbo-action {
+      @apply flex flex-col justify-center items-center gap-[10px];
+      label {
+        @apply text-center text-white/[0.75] uppercase font-[.5em];
+        text-shadow: -0.0625em -0.0625em 0.125em rgba(255, 255, 255, .25), 0.0625em 0.0625em 0.125em rgba(0, 0, 0, .25);
+      }
+    }
+  }
+}
