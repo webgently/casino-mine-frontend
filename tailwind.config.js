@@ -34,7 +34,9 @@ module.exports = {
     },
     // Extend default configurations
     extend: {
-      colors: {},
+      colors: {
+        yellow: '#ffc020'
+      },
       container: {
         center: true
       }
