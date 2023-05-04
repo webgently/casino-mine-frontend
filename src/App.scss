@@ -1,4 +1,4 @@
 body {
-  background: radial-gradient(50% 50%,#47576f 0%,#101d32 100%);
+  background: radial-gradient(farthest-side at 50% 50%, #47576f 0%, #101d32 100%);
   @apply w-full min-h-[100vh];
 }
