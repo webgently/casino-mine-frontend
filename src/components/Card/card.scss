@@ -1,0 +1,36 @@
+.play-target-item {
+  font-size: 28px;
+  @apply relative flex justify-center items-center w-full h-full cursor-pointer;
+  .target-item-inner {
+    background-image: url("../../assets/images/item_box.webp");
+    @apply flex justify-center items-center absolute bg-center w-full h-full bg-contain bg-no-repeat bg-contain
+    border-[1px] border-transparent;
+    &:before {
+      background-image: url("../../assets/images/target.svg");
+      @apply w-[80%] h-[80%] absolute content-[""] bg-no-repeat bg-contain;
+    }
+
+    .target-item-sum {
+      @apply hidden absolute opacity-[0] text-yellow font-[600] text-[.625em] leading-[1em];
+    }
+  }
+
+  .target-item-shadow {
+    box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, .65);
+    @apply z-[1] w-[85%] h-[85%] bg-black/[0] rounded-[20%] absolute;
+  }
+
+  &:hover {
+    .target-item-inner {
+      background-image: url("../../assets/images/item_active_box.webp");
+
+      .target-item-sum {
+        @apply block opacity-[1];
+      }
+    }
+
+    .target-item-shadow {
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .5);
+    }
+  }
+}
