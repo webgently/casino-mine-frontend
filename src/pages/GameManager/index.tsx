@@ -6,12 +6,12 @@ import NumberBox from '../../components/MineBox';
 import AmountBox from '../../components/AmountBox';
 import BetButton from '../../components/BetButton';
 import ToggleBox from '../../components/ToggleBox';
+import ProfitBox from '../../components/ProfitBox';
 import useStore from '../../useStore';
 import { config } from '../../config/global.const';
 import { postRequest } from '../../service';
 import Modal from '../../components/Modal';
 import './gamemanager.scss';
-import ProfitBox from '../../components/ProfitBox';
 
 const socket = io(config.wwsHost as string);
 const GameManager = () => {
@@ -31,7 +31,7 @@ const GameManager = () => {
   const [betAmount, setBetAmount] = useState<number>(1);
   const [mineCount, setMineCount] = useState(1);
 
-  const [turbo, setTurbo] = useState(false);
+  const [turboMode, setTurboMode] = useState(false);
   const [turboList, setTurboList] = useState([]);
   const [currentTarget, setCurrentTarget] = useState(-1);
   const [cardLoading, setCardLoading] = useState(false);
@@ -46,6 +46,7 @@ const GameManager = () => {
       img: uniqid(),
       balance: 1000
     };
+    setTotalValue(1000);
     postRequest(`/register`, data).then((res: any) => {
       if (res.status) {
         update({ auth: { ...res.data } } as StoreObject);
@@ -68,7 +69,8 @@ const GameManager = () => {
     if (auth) {
       switch (btnActionStatus) {
         case 'start':
-          if (turbo && turboList.length === 0) return;
+          if (turboMode && turboList.length === 0) return;
+          if (!turboMode) setCurrentProfit(0);
           initializeGridSystem(gridCount);
           setLoading(true);
           setCardLoading(true);
@@ -78,8 +80,9 @@ const GameManager = () => {
               betAmount,
               gridCount,
               mineCount,
-              turbo,
-              turboList
+              turboMode,
+              turboList,
+              profitValue: profitCalcList[currentProfit - 1]
             });
             setPlayStatus(true);
           }, 1000);
@@ -94,12 +97,7 @@ const GameManager = () => {
         case 'cashOut':
           setLoading(true);
           setTimeout(() => {
-            // server request
-            setResultModalOpen(true);
-            setPlayStatus(false);
-            initializeGridSystem(gridCount);
-            setBtnActionStatus('start');
-            setLoading(false);
+            socket.emit('cashOut', { userid: auth?.userid, profitValue: profitCalcList[currentProfit - 1] });
           }, 1000);
           break;
       }
@@ -125,7 +123,7 @@ const GameManager = () => {
 
   const checkMine = (order: number) => {
     if (auth) {
-      if (turbo) {
+      if (turboMode) {
         let grids: any = [...gridDataList];
         let turbos: any = [...turboList];
         if (grids[order].turbo) {
@@ -136,6 +134,8 @@ const GameManager = () => {
           grids[order].turbo = true;
           turbos.push(order);
         }
+
+        setCurrentProfit(turboList.length);
         setTurboList(turbos);
         setGridDataList(grids);
         setCurrentTarget(order);
@@ -151,16 +151,34 @@ const GameManager = () => {
   };
 
   useEffect(() => {
+    switch (gridCount) {
+      case 3:
+        setMineCount(2);
+        break;
+      case 5:
+        setMineCount(3);
+        break;
+      case 7:
+        setMineCount(5);
+        break;
+      case 9:
+        setMineCount(10);
+        break;
+    }
+  }, [gridCount]);
+
+  useEffect(() => {
     setCurrentTarget(-1);
     setTurboList([]);
     initializeGridSystem(gridCount);
-
-    socket.emit('setProfitCalcList', { userid: auth?.userid, mineCount, gridCount });
+    setTimeout(() => {
+      socket.emit('setProfitCalcList', { userid: auth?.userid, mineCount, gridCount });
+    }, 100);
 
     return () => {
       socket.off('setProfitCalcList');
     };
-  }, [mineCount, turbo, gridCount]);
+  }, [mineCount, turboMode]);
 
   useEffect(() => {
     socket.on(`checkMine-${auth?.userid}`, async (e) => {
@@ -174,24 +192,26 @@ const GameManager = () => {
           setCardLoading(false);
           setBtnActionStatus('start');
           setPlayStatus(false);
+          setCurrentProfit(0);
         }, 1000);
         setTimeout(() => {
           initializeGridSystem(gridCount);
         }, 3000);
       } else {
-        setCurrentProfit(currentProfit + 1);
         data[e.index].mine = e.mine;
         data[e.index].active = true;
         setTimeout(() => {
           setCardLoading(false);
+          setCurrentProfit((prevState) => prevState + 1);
           setBtnActionStatus('cashOut');
         }, 1000);
       }
       setGridDataList(data);
     });
     socket.on(`playBet-${auth?.userid}`, async (e) => {
-      if (e.turbo) {
+      if (e.turboMode) {
         let data: any = [...gridDataList];
+
         const count = turboList.filter((item1) => e.gridSystem[item1]).length;
         turboList.map((item1: number) => {
           data[item1].active = true;
@@ -206,22 +226,23 @@ const GameManager = () => {
         } else {
           setResultModalOpen(true);
         }
+
         setPlayStatus(false);
         setBtnActionStatus('start');
         setGridDataList(data);
 
         setTimeout(() => {
           setResultModalOpen(false);
-        }, 1000);
+        }, 2000);
 
         setTimeout(() => {
           initializeGridSystem(gridCount);
         }, 2000);
       } else {
-        setTotalValue(e.balance);
-        update({ auth: { ...auth, balance: e.balance } } as StoreObject);
         setBtnActionStatus('cancel');
       }
+      setTotalValue(e.balance);
+      update({ auth: { ...auth, balance: e.balance } } as StoreObject);
       setCardLoading(false);
       setLoading(false);
     });
@@ -256,14 +277,30 @@ const GameManager = () => {
   }, [profitCalcList, profitCalcTextList]);
 
   useEffect(() => {
-    if (!auth || Number(auth?.balance) <= 0) makeNewUser();
-    socket.emit('join', auth);
+    if (!auth || !auth?.balance || Number(auth?.balance) <= 0) makeNewUser();
+
+    if (auth) socket.emit('join', auth);
 
     socket.on(`cancelBet-${auth?.userid}`, async (e) => {
       setTotalValue(e.balance);
       update({ auth: { ...auth, balance: e.balance } } as StoreObject);
       setLoading(false);
       setBtnActionStatus('start');
+    });
+
+    socket.on(`cashOut-${auth?.userid}`, async (e) => {
+      setTotalValue(e.balance);
+      update({ auth: { ...auth, balance: e.balance } } as StoreObject);
+      setResultModalOpen(true);
+      setPlayStatus(false);
+      initializeGridSystem(gridCount);
+      setBtnActionStatus('start');
+      setLoading(false);
+
+      setTimeout(() => {
+        setCurrentProfit(0);
+        setResultModalOpen(false);
+      }, 2000);
     });
 
     socket.on(`error-${auth?.userid}`, async (e) => {
@@ -273,6 +310,7 @@ const GameManager = () => {
     return () => {
       socket.off('join');
       socket.off(`cancelBet-${auth?.userid}`);
+      socket.off(`cashOut-${auth?.userid}`);
       socket.off(`error-${auth?.userid}`);
     };
   }, []);
@@ -294,7 +332,15 @@ const GameManager = () => {
               >
                 {profitCalcTextList.slice(0, 8).map((item: any, ind: number) => {
                   return (
-                    <ProfitBox key={ind} ind={ind} item={item} profitCalcList={profitCalcList} currentProfit={currentProfit} />
+                    <ProfitBox
+                      key={ind}
+                      ind={ind}
+                      playStatus={playStatus}
+                      item={item}
+                      turboMode={turboMode}
+                      profitCalcList={profitCalcList}
+                      currentProfit={currentProfit}
+                    />
                   );
                 })}
               </div>
@@ -303,7 +349,7 @@ const GameManager = () => {
           <div className="balance-container">
             <label>Balance</label>
             <div className="balance">
-              <span>${totalValue}</span>
+              <span>${totalValue?.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -316,7 +362,7 @@ const GameManager = () => {
               return (
                 <div key={ind} onClick={() => checkMine(ind)}>
                   <Card
-                    turboMode={turbo}
+                    turboMode={turboMode}
                     turbo={item.turbo}
                     turboList={turboList}
                     loading={cardLoading}
@@ -379,25 +425,43 @@ const GameManager = () => {
           <div className="turbo-control-group">
             <label>Turbo</label>
             <div className="turbo-control-action">
-              <ToggleBox value={turbo} setValue={(e: boolean) => !playStatus && setTurbo(e)} playStatus={playStatus} />
+              <ToggleBox
+                value={turboMode}
+                setValue={(e: boolean) => !playStatus && setTurboMode(e)}
+                playStatus={playStatus}
+              />
             </div>
           </div>
           <div className="btn-control-action" onClick={handleBetButton}>
-            <BetButton turbo={turbo} cardLoading={cardLoading} loading={loading} type={btnActionStatus} />
+            <BetButton
+              profitAmount={currentProfit && (betAmount * profitCalcList[currentProfit - 1]).toFixed(2)}
+              turboMode={turboMode}
+              cardLoading={cardLoading}
+              loading={loading}
+              type={btnActionStatus}
+            />
           </div>
         </div>
       </div>
       <Modal open={resultModalOpen} setOpen={setResultModalOpen}>
         <div className="game-result-modal">
-          <div className="win_img" />
+          <div
+            className={`win_img ${
+              profitCalcList[currentProfit - 1] >= 10
+                ? '_win3'
+                : profitCalcList[currentProfit - 1] >= 2
+                ? '_win2'
+                : '_win1'
+            }`}
+          />
           <div className="win-info-detail">
             <div className="win-amount">
-              <p>$108.00</p>
-              <span>$108.00</span>
+              <p>${betAmount * profitCalcList[currentProfit - 1]}</p>
+              <span>${betAmount * profitCalcList[currentProfit - 1]}</span>
             </div>
             <div className="win-amount-double">
-              <p>X1.08</p>
-              <span>X1.08</span>
+              <p>X{profitCalcList[currentProfit - 1]}</p>
+              <span>X{profitCalcList[currentProfit - 1]}</span>
             </div>
             <p className="win-text">Multiplier</p>
           </div>
