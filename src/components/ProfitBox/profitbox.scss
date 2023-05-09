@@ -8,7 +8,6 @@
     }
 }
 .history-item_active {
-    background-color: #0094ff;
     border-radius: 0.75em;
     > span {
         color: #000;
@@ -17,7 +16,8 @@
         content: "";
         width: calc(100% + 0.5em);
         height: calc(100% + 0.5em);
-        border: 0.0625em solid #0094ff;
+        border-width: 0.0625em;
+        border-style: solid;
         border-radius: 1.25em;
         animation: opacity1 2s linear .15s infinite reverse;
         position: absolute;
@@ -45,7 +45,8 @@
         content: "";
         width: calc(100% + 0.25em);
         height: calc(100% + 0.25em);
-        border: 0.0625em solid #0094ff;
+        border-width: 0.0625em;
+        border-style: solid;
         border-radius: 1.25em;
         animation: opacity2 2s linear infinite reverse;
         position: absolute;
