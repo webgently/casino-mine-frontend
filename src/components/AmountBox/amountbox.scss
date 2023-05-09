@@ -1,5 +1,4 @@
 .amount-box {
-  font-size: 28px;
   width: 9em;
   height: 9em;
   .amount-landscape {
@@ -188,14 +187,6 @@
 
         .bottom-left:after {
           transform: rotate(90deg);
-        }
-
-        .bottom-right:before {
-          transform: rotate(360deg);
-        }
-
-        .bottom-right:after {
-          transform: rotate(360deg);
         }
       }
     }
