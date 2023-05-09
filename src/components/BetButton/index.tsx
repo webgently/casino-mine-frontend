@@ -3,7 +3,7 @@ import CricketImg from '../../assets/images/cricket.png';
 import CricketShadowImg from '../../assets/images/shadow.webp';
 import './betbutton.scss';
 
-const BetButton = ({ cardLoading, loading, type, turbo }: any) => {
+const BetButton = ({ profitAmount, cardLoading, loading, type, turboMode }: any) => {
   return (
     <div className={`bet-button-${type} ${(loading || cardLoading) && 'pointer-events-none'}`}>
       <div className="bet-button-inner">
@@ -21,13 +21,13 @@ const BetButton = ({ cardLoading, loading, type, turbo }: any) => {
             ) : type === 'cashOut' ? (
               'Cash Out'
             ) : (
-              `${turbo ? 'Place bet' : 'Start Game'}`
+              `${turboMode ? 'Place bet' : 'Start Game'}`
             )}
           </div>
           {type === 'cashOut' && (
             <div className="bet-button-sum">
               <div className="bet-button-sum-content">
-                <span>$10</span>
+                <span>${profitAmount}</span>
               </div>
             </div>
           )}
