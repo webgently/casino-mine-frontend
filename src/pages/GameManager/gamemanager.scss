@@ -165,9 +165,20 @@
 
   .win_img {
     @apply absolute w-[16.25em] h-[15em] z-[1] -top-[4.375em];
-    background-image: url('../../assets/images/win1.webp');
     background-size: contain;
     animation: scale .4s cubic-bezier(.175,.885,.35,1.75) -.1s;
+  }
+
+  ._win1 {
+    background-image: url('../../assets/images/win1.webp');
+  }
+
+  ._win2 {
+    background-image: url('../../assets/images/win2.webp');
+  }
+
+  ._win3 {
+    background-image: url('../../assets/images/win3.webp');
   }
 
   .win-info-detail {
