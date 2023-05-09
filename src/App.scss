@@ -1,4 +1,7 @@
 body {
   background: radial-gradient(farthest-side at 50% 50%, #47576f 0%, #101d32 100%);
   @apply w-full min-h-[100vh];
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
