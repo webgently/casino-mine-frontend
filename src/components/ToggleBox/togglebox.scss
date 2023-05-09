@@ -1,8 +1,7 @@
 .toggle-box {
-  font-size: 28px;
   width: 3.75em;
   height: 2.25em;
-  cursor: pointer;
+  cursor: default;
   background: rgba(0,0,0,.05);
   border-radius: 1.25em;
   box-shadow: 0.125em 0.125em 0.25em rgba(255,255,255,.15), -0.125em -0.125em 0.375em rgba(0,0,0,.75);
@@ -40,8 +39,11 @@
       }
     }
   }
+}
 
+.toggle-box_hover {
   &:hover {
+    cursor: pointer;
     .toggle-box-inner {
       .toggle-box-btn {
         box-shadow: 0 0 0.5em rgba(36, 255, 0, .5);
@@ -54,7 +56,7 @@
   }
 }
 
-.toggle-box-active {
+.toggle-box_active {
   background: linear-gradient(#00ad30, #00ad30), rgba(0, 0, 0, .05);
   box-shadow: 0.125em 0.125em 0.25em rgba(255, 255, 255, .15), -0.125em -0.125em 0.375em rgba(0, 0, 0, .75), inset 0 0 0.5em #24ff00;
 
