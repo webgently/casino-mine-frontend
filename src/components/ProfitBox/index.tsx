@@ -19,7 +19,7 @@ const ProfitBox = ({ item, ind, playStatus, turboMode, profitCalcList, currentPr
     >
       <span
         className={profitCalcList[ind] >= 10 ? 'text-yellow' : profitCalcList[ind] >= 2 ? 'text-green' : 'text-blue'}
-      >{`X ${item.value}`}</span>
+      >{`X${item.value}`}</span>
     </div>
   );
 };
