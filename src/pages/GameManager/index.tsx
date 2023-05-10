@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import uniqid from 'uniqid';
 import { io } from 'socket.io-client';
 import Card from '../../components/Card';
-import NumberBox from '../../components/MineBox';
+import MineBox from '../../components/MineBox';
 import AmountBox from '../../components/AmountBox';
 import BetButton from '../../components/BetButton';
 import ToggleBox from '../../components/ToggleBox';
@@ -12,6 +12,7 @@ import { config } from '../../config/global.const';
 import { postRequest } from '../../service';
 import Modal from '../../components/Modal';
 import './gamemanager.scss';
+import SettingBtn from '../../components/SettingBtn';
 
 const socket = io(config.wwsHost as string);
 const GameManager = () => {
@@ -35,10 +36,11 @@ const GameManager = () => {
   const [turboList, setTurboList] = useState([]);
   const [currentTarget, setCurrentTarget] = useState(-1);
   const [cardLoading, setCardLoading] = useState(false);
-  const [resultModalOpen, setResultModalOpen] = useState(false);
   const [profitCalcList, setProfitCalcList] = useState([]);
   const [profitCalcTextList, setProfitCalcTextList] = useState([]);
   const [currentProfit, setCurrentProfit] = useState(0);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [settingModalOpen, setSettingModalOpen] = useState(false);
 
   const makeNewUser = () => {
     let data = {
@@ -354,6 +356,18 @@ const GameManager = () => {
           </div>
         </div>
         <div className="game-landscape-content">
+          <div className="game-landscape-setting-info flex slg:hidden">
+            <div className="game-landscape-setting-info-inner">
+              <div className="setting-item">
+                <div className="setting-icon"></div>
+                <div className="setting-value">{`${gridCount}X${gridCount}`}</div>
+              </div>
+              <div className="setting-item">
+                <div className="setting-icon"></div>
+                <div className="setting-value">{mineCount}</div>
+              </div>
+            </div>
+          </div>
           <div
             className="game-landscape-card-group"
             style={{ gridTemplateColumns: `repeat(${gridCount}, minmax(0, 1fr))` }}
@@ -394,12 +408,46 @@ const GameManager = () => {
             </div>
             <div className="game-landscape-size-title">Grid</div>
           </div>
+          <div className="mobile-game-controller flex slg:hidden">
+            <div className="top-controller">
+              <AmountBox
+                isMobile="mobile"
+                minLimit={0.1}
+                maxLimit={100}
+                value={betAmount}
+                setValue={(e: number) => !playStatus && setBetAmount(e)}
+                playStatus={playStatus}
+              />
+            </div>
+            <div className="bottom-controller">
+              <ToggleBox
+                isMobile={true}
+                value={turboMode}
+                setValue={(e: boolean) => !playStatus && setTurboMode(e)}
+                playStatus={playStatus}
+              />
+              <div className="btn-control-action" onClick={handleBetButton}>
+                <BetButton
+                  isMobile={true}
+                  profitAmount={currentProfit && (betAmount * profitCalcList[currentProfit - 1]).toFixed(2)}
+                  turboMode={turboMode}
+                  cardLoading={cardLoading}
+                  loading={loading}
+                  type={btnActionStatus}
+                />
+              </div>
+              <div onClick={() => setSettingModalOpen(true)}>
+                <SettingBtn playStatus={playStatus} />
+              </div>
+            </div>
+          </div>
         </div>
         <div className="game-landscape-left">
           <div className="wickets-control-group">
             <label>Wickets</label>
             <div className="mine-control-action">
-              <NumberBox
+              <MineBox
+                isMobile={false}
                 min={1}
                 max={gridCount * gridCount - 1}
                 value={mineCount}
@@ -412,6 +460,7 @@ const GameManager = () => {
             <label>Bet Amount</label>
             <div className="amount-control-action">
               <AmountBox
+                isMobile="desktop"
                 minLimit={0.1}
                 maxLimit={100}
                 value={betAmount}
@@ -426,6 +475,7 @@ const GameManager = () => {
             <label>Turbo</label>
             <div className="turbo-control-action">
               <ToggleBox
+                isMobile={false}
                 value={turboMode}
                 setValue={(e: boolean) => !playStatus && setTurboMode(e)}
                 playStatus={playStatus}
@@ -434,6 +484,7 @@ const GameManager = () => {
           </div>
           <div className="btn-control-action" onClick={handleBetButton}>
             <BetButton
+              isMobile={false}
               profitAmount={currentProfit && (betAmount * profitCalcList[currentProfit - 1]).toFixed(2)}
               turboMode={turboMode}
               cardLoading={cardLoading}
@@ -464,6 +515,51 @@ const GameManager = () => {
               <span>X{profitCalcList[currentProfit - 1]}</span>
             </div>
             <p className="win-text">Multiplier</p>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={settingModalOpen} setOpen={setSettingModalOpen}>
+        <div className="game-setting-modal">
+          <div className="modal-close" onClick={() => setSettingModalOpen(false)}>
+            &times;
+          </div>
+          <div className="game-setting-grid">
+            <label>Grid</label>
+            <div className="game-setting-grid-options">
+              {gridSettingList.map((item: any, ind: number) => {
+                return (
+                  <div
+                    key={ind}
+                    className={`setting-grid-btn ${item.active && '_active'}`}
+                    onClick={() => setGridSystem(item.grid, ind)}
+                  >
+                    <div className="setting-grid-btn-inner">{item.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="game-setting-wickets">
+            <label>Wickets</label>
+            <MineBox
+              isMobile={true}
+              min={1}
+              max={gridCount * gridCount - 1}
+              value={mineCount}
+              setValue={(e: number) => !playStatus && setMineCount(e)}
+              playStatus={playStatus}
+            />
+          </div>
+          <div className="game-setting-amount">
+            <label>Bet Amount</label>
+            <AmountBox
+              isMobile="modal"
+              minLimit={0.1}
+              maxLimit={100}
+              value={betAmount}
+              setValue={(e: number) => !playStatus && setBetAmount(e)}
+              playStatus={playStatus}
+            />
           </div>
         </div>
       </Modal>
