@@ -4,7 +4,7 @@ import './amountbox.scss';
 const sub = (a: number, b: number, p = 8) => Math.round((a - b) * 10 ** p) / 10 ** p;
 const add = (a: number, b: number, p = 8) => Math.round((a + b) * 10 ** p) / 10 ** p;
 
-const AmountBox = ({ minLimit, maxLimit, value, setValue, playStatus }: any) => {
+const AmountBox = ({ minLimit, maxLimit, value, setValue, playStatus, isMobile }: any) => {
   const handleMax = () => {
     setValue(maxLimit);
   };
@@ -28,29 +28,90 @@ const AmountBox = ({ minLimit, maxLimit, value, setValue, playStatus }: any) => 
   }, [value]);
 
   return (
-    <div className={`amount-box ${playStatus && 'pointer-events-none'}`}>
-      <div className="amount-landscape">
-        <div className="amount-landscape-inner">
-          <div className="amount-landscape-center">
-            <input type="text" name="amount" value={`$ ${value}`} readOnly disabled={playStatus} />
-          </div>
-          <div className="amount-landscape-btn-group">
-            <div className="amount-landscape-btn top-left" onClick={handleMax}>
-              <span className={playStatus ? 'text-white/[0.5]' : ''}>max</span>
-            </div>
-            <div className="amount-landscape-btn top-right" onClick={handlePlus}>
-              <span className={playStatus ? 'text-white/[0.5]' : ''}>+</span>
-            </div>
-            <div className="amount-landscape-btn bottom-left" onClick={handleMin}>
-              <span className={playStatus ? 'text-white/[0.5]' : ''}>min</span>
-            </div>
-            <div className="amount-landscape-btn bottom-right" onClick={handleMinus}>
-              <span className={playStatus ? 'text-white/[0.5]' : ''}>-</span>
+    <>
+      {isMobile === 'desktop' ? (
+        <div className={`amount-box ${playStatus && 'pointer-events-none'}`}>
+          <div className="amount-landscape">
+            <div className="amount-landscape-inner">
+              <div className="amount-landscape-center">
+                <input type="text" name="amount" value={`$ ${value}`} readOnly disabled={playStatus} />
+              </div>
+              <div className="amount-landscape-btn-group">
+                <div className="amount-landscape-btn top-left" onClick={handleMax}>
+                  <span className={playStatus ? 'text-white/[0.5]' : ''}>max</span>
+                </div>
+                <div className="amount-landscape-btn top-right" onClick={handlePlus}>
+                  <span className={playStatus ? 'text-white/[0.5]' : ''}>+</span>
+                </div>
+                <div className="amount-landscape-btn bottom-left" onClick={handleMin}>
+                  <span className={playStatus ? 'text-white/[0.5]' : ''}>min</span>
+                </div>
+                <div className="amount-landscape-btn bottom-right" onClick={handleMinus}>
+                  <span className={playStatus ? 'text-white/[0.5]' : ''}>-</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      ) : isMobile === 'mobile' ? (
+        <div className={`mobile-amount-box ${playStatus && 'pointer-events-none'}`}>
+          <div className="mobile-amount-controller">
+            <div className="mobile-amount-inner">
+              <div className="mobile-amount-title">Bet Amount</div>
+              <div className="mobile-amount-btns">
+                <div className="mobile-amount-btns-inner">
+                  <div className={`btn-left ${playStatus && '!text-white/[0.5]'}`} onClick={handleMin}>
+                    min
+                  </div>
+                  <div className={`btn-right ${playStatus && '!text-white/[0.5]'}`} onClick={handlePlus}>
+                    -
+                  </div>
+                </div>
+              </div>
+              <div className="mobile-amount-input">
+                <input type="text" name="amount" value={`$ ${value}`} readOnly disabled={playStatus} />
+              </div>
+              <div className="mobile-amount-btns">
+                <div className="mobile-amount-btns-inner">
+                  <div className={`btn-left ${playStatus && '!text-white/[0.5]'}`} onClick={handlePlus}>
+                    +
+                  </div>
+                  <div className={`btn-right ${playStatus && '!text-white/[0.5]'}`} onClick={handleMax}>
+                    max
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : isMobile === 'modal' ? (
+        <div className={`modal-amount-box ${playStatus && 'pointer-events-none'}`}>
+          <div className="modal-amount-input">
+            <input type="text" name="amount" value={`$ ${value}`} readOnly disabled={playStatus} />
+          </div>
+          <div className="modal-amount-input-btn" onClick={handleMin}>
+            <div className="modal-amount-input-btn-inner">min</div>
+          </div>
+          <div className="modal-amount-input-btn-group">
+            <div className="modal-amount-input-btn-inner">
+              <div className="group-btn" onClick={handleMin}>
+                -
+              </div>
+              <div className="group-btn" onClick={handlePlus}>
+                +
+              </div>
+            </div>
+          </div>
+          <div className="modal-amount-input-btn">
+            <div className="modal-amount-input-btn-inner" onClick={handleMax}>
+              max
+            </div>
+          </div>
+        </div>
+      ) : (
+        <></>
+      )}
+    </>
   );
 };
 
