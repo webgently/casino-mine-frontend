@@ -1,9 +1,14 @@
 .game-management-layout {
   @apply flex justify-center items-center relative;
 
+  .refund-btn {
+    @apply flex items-center gap-[10px] text-white hover:text-[#d5dceb] absolute top-[20px] left-[20px] z-[200];
+  }
+
   .game-landscape-top {
-    @apply flex items-center justify-between slg:justify-center gap-[1em] w-full h-[5em] px-[1em] absolute top-0 right-0 left-0 z-[100]
+    @apply flex items-center justify-between slg:justify-center gap-[1em] w-full h-[5em] px-[1em] absolute top-[20px] right-0 left-0 z-[100]
     text-[20px] xl:text-[24px] 2xl:text-[28px];
+
     .logo-container {
       background-image: url("../../assets/images/logo.webp");
       @apply w-[7em] h-[3.125em] bg-[50%] bg-no-repeat bg-contain text-[28px];
@@ -390,5 +395,34 @@
     font-weight: 400;
     line-height: .875em;
     display: flex;
+  }
+}
+
+.game-deposit-modal {
+  width: 22em;
+  height: 10em;
+  background: #142237;
+  border-radius: 1.5em;
+  padding: 1.5em 1.2em;
+  box-shadow: 0 0 1.25em rgba(0,0,0,.5);
+  @apply text-[14px] 2xs:text-[20px] xs:text-[24px] sm:text-[28px];
+  .modal-close {
+    position: absolute;
+    right: 1.2em;
+    top: 1em;
+    color: white;
+    cursor: pointer;
+  }
+  > div:last-child {
+    @apply flex flex-col justify-center h-full gap-[20px];
+    p {
+      @apply text-center text-white text-[1em];
+    }
+    a {
+      @apply text-center text-[0.5em] text-green;
+      &:hover {
+        @apply underline;
+      }
+    }
   }
 }

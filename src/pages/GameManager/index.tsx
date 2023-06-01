@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import uniqid from 'uniqid';
+import { useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { toast } from 'react-toastify';
+import IconMenu from '../../components/Icons';
 import Card from '../../components/Card';
 import MineBox from '../../components/MineBox';
 import AmountBox from '../../components/AmountBox';
@@ -13,20 +15,22 @@ import GridIcon from '../../assets/images/grid_icon.svg';
 import CricketIcon from '../../assets/images/cricket_icon.svg';
 import useStore from '../../useStore';
 import { config } from '../../config/global.const';
-import { postRequest } from '../../service';
 import './gamemanager.scss';
 
+let loop = 0;
 const socket = io(config.wwsHost as string);
 const GameManager = () => {
-  /* redux variable and function */
+  /* common variable and function */
   const { auth, update } = useStore();
+  const token = new URLSearchParams(useLocation().search).get('cert');
+  const [isLoading, setIsLoading] = useState(false);
   /* variables for game setting */
-  const [totalValue, setTotalValue] = useState(auth?.balance);
+  const [totalValue, setTotalValue] = useState<number>(Number(auth?.balance));
   const [gridCount, setGridCount] = useState<number>(5);
   const [turboMode, setTurboMode] = useState<boolean>(false);
   const [turboModeStart, setTurboModeStart] = useState<boolean>(false);
-  const [betAmount, setBetAmount] = useState<number>(1);
-  const [mineCount, setMineCount] = useState<number>(1);
+  const [betAmount, setBetAmount] = useState<number>(10);
+  const [mineCount, setMineCount] = useState<number>(3);
   const [gridDataList, setGridDataList] = useState([]);
   const [gridSettingList, setGridSettingList] = useState([
     { label: '3X3', grid: 3, active: false },
@@ -48,6 +52,7 @@ const GameManager = () => {
   /* variables for control the modal */
   const [resultModalOpen, setResultModalOpen] = useState<boolean>(false);
   const [settingModalOpen, setSettingModalOpen] = useState<boolean>(false);
+  const [depositModalOpen, setDepositModalOpen] = useState<boolean>(false);
   /* assistant variables for control the game */
   const [loading, setLoading] = useState<boolean>(false);
   const [playStatus, setPlayStatus] = useState<boolean>(false);
@@ -55,29 +60,46 @@ const GameManager = () => {
   const [currentTarget, setCurrentTarget] = useState<number>(-1);
   const [btnActionStatus, setBtnActionStatus] = useState<string>('start');
 
-  /* function for make user */
-  const makeNewUser = () => {
-    let data = {
-      name: uniqid(),
-      img: uniqid(),
-      balance: 1000
-    };
-    postRequest(`/register`, data).then((res: any) => {
-      if (res.status) {
-        update({ auth: { ...res.data } } as StoreObject);
-        setTotalValue(1000);
-      }
-    });
-  };
   /* function for create or join on room */
   useEffect(() => {
-    if (!auth || !auth?.balance || Number(auth?.balance) <= 0) makeNewUser();
-    socket.emit('join', auth);
+    setIsLoading(true);
+    socket.emit('join', { token });
+
+    socket.on(`join-${token}`, (e: any) => {
+      update({
+        auth: {
+          userid: e.userid,
+          username: e.username,
+          avatar: e.avatar,
+          balance: e.balance
+        }
+      } as StoreObject);
+      initializeGridSystem(gridCount);
+      setTotalValue(Number(e.balance));
+      socket.emit('setProfitCalcList', { userid: e.userid, mineCount, gridCount });
+      setIsLoading(false);
+    });
+
     return () => {
       socket.off('join');
+      socket.off(`join-${token}`);
     };
     // eslint-disable-next-line
-  }, [auth]);
+  }, []);
+  /* function for set profit calculate list according to mine count, turboMode and grid count */
+  useEffect(() => {
+    if (loop > 0) {
+      setTurboList([]);
+      setProfitCalcPage(0);
+      setCurrentProfitInd(0);
+      initializeGridSystem(gridCount);
+      socket.emit('setProfitCalcList', { userid: auth?.userid, mineCount, gridCount });
+    }
+    return () => {
+      socket.off('setProfitCalcList');
+    };
+    // eslint-disable-next-line
+  }, [mineCount, turboMode, gridCount]);
   /* function for initialize cards */
   const initializeGridSystem = (count: number) => {
     let data: any = [];
@@ -97,7 +119,7 @@ const GameManager = () => {
       setGridSettingList(data);
       setGridCount(count);
     } else {
-      alert('Undefined user');
+      toast.error('Undefined user');
     }
   };
   /* function for submit card */
@@ -139,16 +161,16 @@ const GameManager = () => {
         if (!playStatus || cardLoading) return;
         setCardLoading(true);
         setCurrentTarget(order);
-        socket.emit('checkMine', { userid: auth?.userid, order });
+        socket.emit('checkMine', { userid: auth?.userid, order, betAmount: betAmount * 100 });
       }
     } else {
-      alert('Undefined user');
+      toast.error('Undefined user');
     }
   };
   /* function for initialize when play bet */
   const initializeStartCase = (turboMode: boolean) => {
     if (turboMode && turboList.length === 0) {
-      alert('Please select the card');
+      toast.warning('Please select the card');
       return false;
     }
     if (turboModeStart) return false;
@@ -162,6 +184,15 @@ const GameManager = () => {
     setCurrentTarget(-1);
     return true;
   };
+  /* function for reroud balance */
+  const refund = () => {
+    if (!isLoading) {
+      setIsLoading(true);
+      socket.emit('refund', { userid: auth?.userid });
+    } else {
+      toast.error('Refund is loading...')
+    }
+  };
   /* function for submit play bet, cancel and cashout */
   const handleBetButton = () => {
     if (loading || cardLoading) return;
@@ -173,7 +204,7 @@ const GameManager = () => {
             setTimeout(() => {
               socket.emit('playBet', {
                 userid: auth?.userid,
-                betAmount,
+                betAmount: betAmount * 100,
                 gridCount,
                 mineCount,
                 turboMode,
@@ -186,7 +217,7 @@ const GameManager = () => {
         case 'cancel':
           setLoading(true);
           setTimeout(() => {
-            socket.emit('cancelBet', { userid: auth?.userid, betAmount });
+            socket.emit('cancelBet', { userid: auth?.userid, betAmount: betAmount * 100, });
           }, 500);
           break;
         case 'cashOut':
@@ -194,6 +225,7 @@ const GameManager = () => {
           setTimeout(() => {
             socket.emit('cashOut', {
               userid: auth?.userid,
+              betAmount,
               profitValue:
                 profitCalcList[
                   maxCount * profitCalcPage + profitCalcPage > 0
@@ -207,7 +239,7 @@ const GameManager = () => {
           break;
       }
     } else {
-      alert('Undefined user');
+      toast.error('Undefined user');
     }
   };
   /* function for set mint count according to grid count */
@@ -227,18 +259,6 @@ const GameManager = () => {
         break;
     }
   }, [gridCount]);
-  /* function for set profit calculate list according to mine count, turboMode and grid count */
-  useEffect(() => {
-    setTurboList([]);
-    setProfitCalcPage(0);
-    setCurrentProfitInd(0);
-    initializeGridSystem(gridCount);
-    socket.emit('setProfitCalcList', { userid: auth?.userid, mineCount, gridCount });
-    return () => {
-      socket.off('setProfitCalcList');
-    };
-    // eslint-disable-next-line
-  }, [mineCount, turboMode, gridCount]);
   /* function for get profitCalcTextList according to profit page */
   useEffect(() => {
     setCurrentProfitCalcTextList(profitCalcTextList.slice(maxCount * profitCalcPage, maxCount * (profitCalcPage + 1)));
@@ -300,18 +320,18 @@ const GameManager = () => {
         setBtnActionStatus('cancel');
       }
       update({ auth: { ...auth, balance: e.balance } } as StoreObject);
-      setTotalValue(e.balance);
+      setTotalValue(Number(e.balance));
     });
     socket.on(`cancelBet-${auth?.userid}`, async (e) => {
       update({ auth: { ...auth, balance: e.balance } } as StoreObject);
-      setTotalValue(e.balance);
+      setTotalValue(Number(e.balance));
       setLoading(false);
       setPlayStatus(false);
       setBtnActionStatus('start');
     });
     socket.on(`cashOut-${auth?.userid}`, async (e) => {
       update({ auth: { ...auth, balance: e.balance } } as StoreObject);
-      setTotalValue(e.balance);
+      setTotalValue(Number(e.balance));
       setResultModalOpen(true);
       setLoading(false);
       setPlayStatus(false);
@@ -383,9 +403,35 @@ const GameManager = () => {
       });
       setProfitCalcTextList(data);
       setCurrentProfitCalcTextList(data.slice(maxCount * profitCalcPage, maxCount * (profitCalcPage + 1)));
+      loop = loop + 1;
+    });
+    socket.on(`refund-${auth?.userid}`, async (e: any) => {
+      update({
+        auth: {
+          ...auth,
+          balance: 0
+        }
+      } as StoreObject);
+      setTotalValue(0);
+      toast.success('Balance Refunded');
+      setTimeout(() => {
+        setIsLoading(false);
+        window.location.href = 'http://annie.ihk.vipnps.vip/iGaming-web';
+      }, 1500);
+    });
+    socket.on(`insufficient-${auth?.userid}`, async () => {
+      update({
+        auth: {
+          ...auth,
+          balance: 0
+        }
+      } as StoreObject);
+      setTotalValue(0);
+      setDepositModalOpen(true);
     });
     socket.on(`error-${auth?.userid}`, async (e) => {
-      alert(e);
+      toast.error(e);
+      setLoading(false);
     });
     return () => {
       socket.off(`playBet-${auth?.userid}`);
@@ -393,10 +439,12 @@ const GameManager = () => {
       socket.off(`cashOut-${auth?.userid}`);
       socket.off(`checkMine-${auth?.userid}`);
       socket.off(`setProfitCalcList-${auth?.userid}`);
+      socket.off(`refund-${auth?.userid}`);
+      socket.off(`insufficient-${auth?.userid}`);
       socket.off(`error-${auth?.userid}`);
     };
     // eslint-disable-next-line
-  }, [gridDataList]);
+  }, [auth, gridDataList]);
 
   const sleep = (ms: number) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -426,6 +474,10 @@ const GameManager = () => {
   return (
     <>
       <div className="game-management-layout">
+        <button className="refund-btn" onClick={refund}>
+          <IconMenu icon="Back" size={30} />
+          <span>Refund</span>
+        </button>
         <div className="game-landscape-top">
           <div className="logo-container" />
           <div className="profit-list-container">
@@ -466,7 +518,7 @@ const GameManager = () => {
           <div className="balance-container">
             <label>Balance</label>
             <div className="balance">
-              <span>${totalValue?.toFixed(2)}</span>
+              <span>₹{(totalValue / 100).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -571,7 +623,7 @@ const GameManager = () => {
                 minLimit={0.1}
                 maxLimit={100}
                 value={betAmount}
-                setValue={(e: number) => !playStatus && setBetAmount(e)}
+                setValue={(e: number) => !playStatus && Number(totalValue) - e >= 0 && setBetAmount(e)}
                 playStatus={playStatus}
               />
             </div>
@@ -622,7 +674,7 @@ const GameManager = () => {
                 minLimit={0.1}
                 maxLimit={100}
                 value={betAmount}
-                setValue={(e: number) => !playStatus && setBetAmount(e)}
+                setValue={(e: number) => !playStatus && Number(totalValue) - e >= 0 && setBetAmount(e)}
                 playStatus={playStatus}
               />
             </div>
@@ -657,8 +709,8 @@ const GameManager = () => {
           <div className={`win_img ${currentProfit >= 10 ? '_win3' : currentProfit >= 2 ? '_win2' : '_win1'}`} />
           <div className="win-info-detail">
             <div className="win-amount">
-              <p>${betAmount * currentProfit}</p>
-              <span>${betAmount * currentProfit}</span>
+              <p>₹{betAmount * currentProfit}</p>
+              <span>₹{betAmount * currentProfit}</span>
             </div>
             <div className="win-amount-double">
               <p>X{currentProfit}</p>
@@ -707,9 +759,22 @@ const GameManager = () => {
               minLimit={0.1}
               maxLimit={100}
               value={betAmount}
-              setValue={(e: number) => !playStatus && setBetAmount(e)}
+              setValue={(e: number) => !playStatus && Number(totalValue) - e >= 0 && setBetAmount(e)}
               playStatus={playStatus}
             />
+          </div>
+        </div>
+      </Modal>
+      <Modal open={depositModalOpen} setOpen={setDepositModalOpen}>
+        <div className="game-deposit-modal">
+          <div className="modal-close" onClick={() => setDepositModalOpen(false)}>
+            &times;
+          </div>
+          <div>
+            <p>Insufficient account balance</p>
+            <a href="http://annie.ihk.vipnps.vip/iGaming-web/#/pages/recharge/recharge">
+              http://annie.ihk.vipnps.vip/iGaming-web/#/pages/recharge/recharge
+            </a>
           </div>
         </div>
       </Modal>
