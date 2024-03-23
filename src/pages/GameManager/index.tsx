@@ -224,7 +224,7 @@ const GameManager = () => {
         if (!playStatus || cardLoading) return;
         setCardLoading(true);
         setCurrentTarget(order);
-        socket.emit('checkMine', { userid: auth?.userid, order, betAmount: betAmount * 100 });
+        socket.emit('checkMine', { userid: auth?.userid, order, betAmount: betAmount });
       }
     } else {
       toast.error('Undefined user');
@@ -267,7 +267,7 @@ const GameManager = () => {
             setTimeout(() => {
               socket.emit('playBet', {
                 userid: auth?.userid,
-                betAmount: betAmount * 100,
+                betAmount: betAmount,
                 gridCount,
                 mineCount,
                 turboMode,
@@ -280,7 +280,7 @@ const GameManager = () => {
         case 'cancel':
           setLoading(true);
           setTimeout(() => {
-            socket.emit('cancelBet', { userid: auth?.userid, betAmount: betAmount * 100 });
+            socket.emit('cancelBet', { userid: auth?.userid, betAmount: betAmount });
           }, 500);
           break;
         case 'cashOut':
@@ -288,7 +288,7 @@ const GameManager = () => {
           setTimeout(() => {
             socket.emit('cashOut', {
               userid: auth?.userid,
-              betAmount: betAmount * 100,
+              betAmount: betAmount,
               profitValue:
                 profitCalcList[
                   maxCount * profitCalcPage + profitCalcPage > 0
@@ -500,9 +500,9 @@ const GameManager = () => {
         return {
           userid: item.userid,
           time: moment(new Date(item.date * 1000)).format('MM/DD/YYYY - h:mm:ss a'),
-          bet_amount: (item.betAmount / 100).toFixed(2),
+          bet_amount: item.betAmount.toFixed(2),
           multiplier: item.profit.toFixed(2),
-          payout: (item.profitAmount / 100).toFixed(2),
+          payout: item.profitAmount.toFixed(2),
           status: item.profit
         };
       });
@@ -613,7 +613,7 @@ const GameManager = () => {
           <div className="balance-container">
             <label>Balance</label>
             <div className="balance">
-              <span>₹{(totalValue / 100).toFixed(2)}</span>
+              <span>${totalValue.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -830,8 +830,8 @@ const GameManager = () => {
           <div className={`win_img ${currentProfit >= 10 ? '_win3' : currentProfit >= 2 ? '_win2' : '_win1'}`} />
           <div className="win-info-detail">
             <div className="win-amount">
-              <p>₹{betAmount * currentProfit}</p>
-              <span>₹{betAmount * currentProfit}</span>
+              <p>${betAmount * currentProfit}</p>
+              <span>${betAmount * currentProfit}</span>
             </div>
             <div className="win-amount-double">
               <p>X{currentProfit}</p>
